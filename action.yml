@@ -1,0 +1,84 @@
+name: "Docker Build & Push"
+description: "Build and push Docker images with caching to AWS ECR using Docker Buildx"
+inputs:
+  REPO_NAME:
+    description: "Docker repository name (defaults to repo name)"
+    required: false
+  PACKAGE_JSON:
+    description: "Path to package.json"
+    required: false
+    default: "package.json"
+  ECR_USERNAME:
+    description: "AWS ECR username"
+    required: true
+  ECR_REGION:
+    description: "AWS region"
+    required: false
+    default: "us-west-2"
+  CACHE_BUCKET:
+    description: "S3 bucket for Docker build cache"
+    required: false
+    default: "local-builds-cache"
+  DOCKERFILE:
+    description: "Dockerfile path"
+    required: false
+    default: "Dockerfile.prod"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push Docker image
+      shell: bash
+      run: |
+        # Inputs with defaults
+        REPO_NAME="${{ inputs.REPO_NAME:-${GITHUB_REPOSITORY##*/} }}"
+        PACKAGE_JSON="${{ inputs.PACKAGE_JSON }}"
+        ECR_USERNAME="${{ inputs.ECR_USERNAME }}"
+        ECR_REGION="${{ inputs.ECR_REGION }}"
+        CACHE_BUCKET="${{ inputs.CACHE_BUCKET }}"
+        DOCKERFILE="${{ inputs.DOCKERFILE }}"
+
+        # Get version from package.json
+        VERSION=$(jq -r .version "$PACKAGE_JSON")
+
+        echo "Repository: $REPO_NAME"
+        echo "Version: $VERSION"
+        echo "Building and pushing image..."
+
+        # Temporarily set version to 0.0.0 for caching
+        jq '.version = "0.0.0"' "$PACKAGE_JSON" > "$PACKAGE_JSON.tmp"
+        mv "$PACKAGE_JSON.tmp" "$PACKAGE_JSON"
+
+        echo "*********************"
+        echo "Temporary package.json"
+        cat "$PACKAGE_JSON"
+        echo "*********************"
+
+        # Login to AWS ECR
+        aws ecr get-login-password --region "$ECR_REGION" | docker login --username AWS --password-stdin "$ECR_USERNAME"
+
+        # Build and push Docker image with caching
+        docker buildx build --platform linux/amd64 \
+          --pull=false \
+          --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache \
+          --cache-to type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache,mode=max,ignore-error=true \
+          -t "$ECR_USERNAME/$REPO_NAME:dev-${GITHUB_SHA}" \
+          -t "$ECR_USERNAME/$REPO_NAME:$VERSION" \
+          -f "$DOCKERFILE" \
+          --push .
+
+        # Restore original package.json
+        git checkout "$PACKAGE_JSON"
+
+        echo "*********************"
+        echo "Restored package.json"
+        cat "$PACKAGE_JSON"
+        echo "*********************"
+      env:
+        GITHUB_SHA: ${{ github.sha }}
