@@ -37,7 +37,8 @@ runs:
       shell: bash
       run: |
         # Inputs with defaults
-        REPO_NAME="${{ inputs.REPO_NAME:-${GITHUB_REPOSITORY##*/} }}"
+        REPO_NAME="${{ inputs.REPO_NAME }}"
+        REPO_NAME="${REPO_NAME:-${GITHUB_REPOSITORY##*/}}"  # fallback in bash
         PACKAGE_JSON="${{ inputs.PACKAGE_JSON }}"
         ECR_USERNAME="${{ inputs.ECR_USERNAME }}"
         ECR_REGION="${{ inputs.ECR_REGION }}"
