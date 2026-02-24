@@ -1,7 +1,7 @@
 name: "Docker Build & Push"
 description: "Build and push Docker images with caching to AWS ECR using Docker Buildx"
 inputs:
-  REPO_NAME:
+  REPO:
     description: "Docker repository name (defaults to repo name)"
     required: false
   PACKAGE_JSON:
@@ -37,8 +37,10 @@ runs:
       shell: bash
       run: |
         # Inputs with defaults
-        REPO_NAME="${{ inputs.REPO_NAME }}"
-        REPO_NAME="${REPO_NAME:-${GITHUB_REPOSITORY##*/}}"  # fallback in bash
+        REPO=""${{ inputs.REPO }}"
+        REPO_NAME="${REPO##*/}"
+        #REPO_NAME="${{ inputs.REPO_NAME }}"
+        #REPO_NAME="${REPO_NAME:-${GITHUB_REPOSITORY##*/}}"  # fallback in bash
         PACKAGE_JSON="${{ inputs.PACKAGE_JSON }}"
         ECR_USERNAME="${{ inputs.ECR_USERNAME }}"
         ECR_REGION="${{ inputs.ECR_REGION }}"
