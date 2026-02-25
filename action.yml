@@ -23,6 +23,15 @@ inputs:
     description: "Dockerfile path"
     required: false
     default: "Dockerfile.prod"
+  SCAN_IMAGE:
+    description: "Whether to scan the image with Trivy (true/false)"
+    required: true
+  IMAGE_TYPE:
+    description: "Type of image to build (dev/prod/pull/test)"
+    required: true
+  IMAGE_TAG:
+    description: "Additional tag for the image (e.g. 'latest')"
+    required: true
 
 runs:
   using: "composite"
@@ -30,9 +39,18 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
+    - name: Get version and set output
+      shell: bash
+      id: get-version
+      run: |
+        VERSION=$(jq -r .version package.json)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
     - name: Build and push Docker image
       shell: bash
       run: |
@@ -46,12 +64,13 @@ runs:
         ECR_REGION="${{ inputs.ECR_REGION }}"
         CACHE_BUCKET="${{ inputs.CACHE_BUCKET }}"
         DOCKERFILE="${{ inputs.DOCKERFILE }}"
-
+        IMAGE_TYPE="${{ inputs.IMAGE_TYPE }}"
         # Get version from package.json
         VERSION=$(jq -r .version "$PACKAGE_JSON")
-
+        IMAGE_TAG="${{ inputs.IMAGE_TAG }}"
         echo "Repository: $REPO_NAME"
         echo "Version: $VERSION"
+        echo "Image Tag: $IMAGE_TAG"
         echo "Building and pushing image..."
 
         # Temporarily set version to 0.0.0 for caching
@@ -67,11 +86,11 @@ runs:
         aws ecr get-login-password --region "$ECR_REGION" | docker login --username AWS --password-stdin "$ECR_USERNAME"
 
         # Build and push Docker image with caching
-        docker buildx build --platform linux/amd64 \
+        docker buildx build --platform linux/amd64,linux/arm64  \
           --pull=false \
           --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache \
           --cache-to type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache,mode=max,ignore-error=true \
-          -t "$ECR_USERNAME/$REPO_NAME:dev-${GITHUB_SHA}" \
+          -t "$ECR_USERNAME/$REPO_NAME:$IMAGE_TYPE-${IMAGE_TAG}" \
           -t "$ECR_USERNAME/$REPO_NAME:$VERSION" \
           -f "$DOCKERFILE" \
           --push .
@@ -85,3 +104,28 @@ runs:
         echo "*********************"
       env:
         GITHUB_SHA: ${{ github.sha }}
+
+    - name: list images
+      shell: bash
+      run: docker image ls
+
+    - name: Scan Docker image with Trivy
+      shell: bash
+      run: |
+        ls -la
+        REPO="${{ inputs.REPO }}"
+        REPO_NAME="${REPO##*/}"
+        echo "Repo name: $REPO_NAME"
+        VERSION="${{ steps.get-version.outputs.version }}"
+        aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ inputs.ECR_USERNAME }}
+        IMAGE="${{ inputs.ECR_USERNAME }}/$REPO_NAME:$VERSION"
+        echo "Scanning $IMAGE for vulnerabilities..."
+        #run base on input SCAN_IMAGE
+        if [ "${{ inputs.SCAN_IMAGE }}" = "true" ]; then
+          echo "Scanning enabled, running Trivy..."
+          trivy image --severity CRITICAL,HIGH --exit-code 1 --skip-files "/usr/local/lib/node_modules/**" --ignore-unfixed $IMAGE
+
+        else
+          echo "Scanning disabled, skipping Trivy..."
+        #trivy image --severity CRITICAL,HIGH,MEDIUM --exit-code 1 --ignore-unfixed $IMAGE
+        #--exit-code 1 --ignore-unfixed $IMAGE
