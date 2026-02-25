@@ -32,6 +32,10 @@ inputs:
   IMAGE_TAG:
     description: "Additional tag for the image (e.g. 'latest')"
     required: true
+  PLATFORM:
+    description: "Target platform for the image (e.g. 'linux/amd64,linux/arm64')"
+    required: false
+    default: "linux/amd64"
 
 runs:
   using: "composite"
@@ -62,6 +66,7 @@ runs:
         PACKAGE_JSON="${{ inputs.PACKAGE_JSON }}"
         ECR_USERNAME="${{ inputs.ECR_USERNAME }}"
         ECR_REGION="${{ inputs.ECR_REGION }}"
+        PLATFORM="${{ inputs.PLATFORM }}"
         CACHE_BUCKET="${{ inputs.CACHE_BUCKET }}"
         DOCKERFILE="${{ inputs.DOCKERFILE }}"
         IMAGE_TYPE="${{ inputs.IMAGE_TYPE }}"
@@ -86,7 +91,7 @@ runs:
         aws ecr get-login-password --region "$ECR_REGION" | docker login --username AWS --password-stdin "$ECR_USERNAME"
 
         # Build and push Docker image with caching
-        docker buildx build --platform linux/amd64,linux/arm64  \
+        docker buildx build --platform "$PLATFORM"  \
           --pull=false \
           --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache \
           --cache-to type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache,mode=max,ignore-error=true \
