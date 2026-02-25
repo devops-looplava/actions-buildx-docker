@@ -37,7 +37,7 @@ runs:
       shell: bash
       run: |
         # Inputs with defaults
-        REPO=""${{ inputs.REPO }}"
+        REPO="${{ inputs.REPO }}"
         REPO_NAME="${REPO##*/}"
         #REPO_NAME="${{ inputs.REPO_NAME }}"
         #REPO_NAME="${REPO_NAME:-${GITHUB_REPOSITORY##*/}}"  # fallback in bash
