@@ -129,8 +129,8 @@ runs:
         if [ "${{ inputs.SCAN_IMAGE }}" = "true" ]; then
           echo "Scanning enabled, running Trivy..."
           trivy image --severity CRITICAL,HIGH --exit-code 1 --skip-files "/usr/local/lib/node_modules/**" --ignore-unfixed $IMAGE
-
         else
           echo "Scanning disabled, skipping Trivy..."
+        fi
         #trivy image --severity CRITICAL,HIGH,MEDIUM --exit-code 1 --ignore-unfixed $IMAGE
         #--exit-code 1 --ignore-unfixed $IMAGE
