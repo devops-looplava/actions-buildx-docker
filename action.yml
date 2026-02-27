@@ -88,8 +88,11 @@ runs:
         echo "*********************"
 
         # Login to AWS ECR
-        aws ecr get-login-password --region "$ECR_REGION" | docker login --username AWS --password-stdin "$ECR_USERNAME"
+        #aws ecr get-login-password --region "$ECR_REGION" | docker login --username AWS --password-stdin "$ECR_USERNAME"
 
+        # OR more reliably:
+        LOGIN_PASSWORD=$(aws ecr get-login-password --region "$ECR_REGION")
+        echo "$LOGIN_PASSWORD" | docker login --username AWS --password-stdin "$ECR_USERNAME"
         # Build and push Docker image with caching
         docker buildx build --platform "$PLATFORM"  \
           --pull=false \
