@@ -67,62 +67,36 @@ runs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
     - name: Build and push Docker image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        GITHUB_SHA: ${{ github.sha }}
       shell: bash
       run: |
-        # Inputs with defaults
         REPO="${{ inputs.REPO }}"
         REPO_NAME="${REPO##*/}"
-        #REPO_NAME="${{ inputs.REPO_NAME }}"
-        #REPO_NAME="${REPO_NAME:-${GITHUB_REPOSITORY##*/}}"  # fallback in bash
         PACKAGE_JSON="${{ inputs.PACKAGE_JSON }}"
-        ECR_USERNAME="${{ inputs.ECR_USERNAME }}"
         ECR_REGION="${{ inputs.ECR_REGION }}"
         PLATFORM="${{ inputs.PLATFORM }}"
         CACHE_BUCKET="${{ inputs.CACHE_BUCKET }}"
         DOCKERFILE="${{ inputs.DOCKERFILE }}"
         IMAGE_TYPE="${{ inputs.IMAGE_TYPE }}"
-        # Get version from package.json
         VERSION=$(jq -r .version "$PACKAGE_JSON")
         IMAGE_TAG="${{ inputs.IMAGE_TAG }}"
-        echo "Repository: $REPO_NAME"
-        echo "Version: $VERSION"
-        echo "Image Tag: $IMAGE_TAG"
-        echo "Building and pushing image..."
 
         # Temporarily set version to 0.0.0 for caching
         jq '.version = "0.0.0"' "$PACKAGE_JSON" > "$PACKAGE_JSON.tmp"
         mv "$PACKAGE_JSON.tmp" "$PACKAGE_JSON"
 
-        echo "*********************"
-        echo "Temporary package.json"
-        cat "$PACKAGE_JSON"
-        echo "*********************"
-
-        # Login to AWS ECR
-        #aws ecr get-login-password --region "$ECR_REGION" | docker login --username AWS --password-stdin "$ECR_USERNAME"
-
-        # # OR more reliably:
-        # LOGIN_PASSWORD=$(aws ecr get-login-password --region "$ECR_REGION")
-        # echo "$LOGIN_PASSWORD" | docker login --username AWS --password-stdin "$ECR_USERNAME"
-        # Build and push Docker image with caching
-        docker buildx build --platform "$PLATFORM"  \
+        docker buildx build --platform "$PLATFORM" \
           --pull=false \
           --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache \
           --cache-to type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache,mode=max,ignore-error=true \
-          -t "$ECR_USERNAME/$REPO_NAME:$IMAGE_TYPE-${IMAGE_TAG}" \
-          -t "$ECR_USERNAME/$REPO_NAME:$VERSION" \
+          -t "$ECR_REGISTRY/$REPO_NAME:$IMAGE_TYPE-${IMAGE_TAG}" \
+          -t "$ECR_REGISTRY/$REPO_NAME:$VERSION" \
           -f "$DOCKERFILE" \
           --push .
 
-        # Restore original package.json
         git checkout "$PACKAGE_JSON"
-
-        echo "*********************"
-        echo "Restored package.json"
-        cat "$PACKAGE_JSON"
-        echo "*********************"
-      env:
-        GITHUB_SHA: ${{ github.sha }}
 
     - name: list images
       shell: bash
