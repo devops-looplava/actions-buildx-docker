@@ -136,7 +136,7 @@ runs:
         REPO_NAME="${REPO##*/}"
         echo "Repo name: $REPO_NAME"
         VERSION="${{ steps.get-version.outputs.version }}"
-        aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ inputs.ECR_USERNAME }}
+        #aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ inputs.ECR_USERNAME }}
         IMAGE="${{ inputs.ECR_USERNAME }}/$REPO_NAME:$VERSION"
         echo "Scanning $IMAGE for vulnerabilities..."
         #run base on input SCAN_IMAGE
