@@ -55,6 +55,17 @@ runs:
         VERSION=$(jq -r .version package.json)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Version: $VERSION"
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ inputs.ECR_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
     - name: Build and push Docker image
       shell: bash
       run: |
@@ -90,9 +101,9 @@ runs:
         # Login to AWS ECR
         #aws ecr get-login-password --region "$ECR_REGION" | docker login --username AWS --password-stdin "$ECR_USERNAME"
 
-        # OR more reliably:
-        LOGIN_PASSWORD=$(aws ecr get-login-password --region "$ECR_REGION")
-        echo "$LOGIN_PASSWORD" | docker login --username AWS --password-stdin "$ECR_USERNAME"
+        # # OR more reliably:
+        # LOGIN_PASSWORD=$(aws ecr get-login-password --region "$ECR_REGION")
+        # echo "$LOGIN_PASSWORD" | docker login --username AWS --password-stdin "$ECR_USERNAME"
         # Build and push Docker image with caching
         docker buildx build --platform "$PLATFORM"  \
           --pull=false \
