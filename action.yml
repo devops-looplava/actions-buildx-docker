@@ -83,7 +83,9 @@ runs:
       shell: bash
       run: |
         REPO="${{ inputs.REPO }}"
+        echo "Repository: $REPO"
         REPO_NAME="${REPO##*/}"
+        echo "Repo name: $REPO_NAME"
         PACKAGE_JSON="${{ inputs.PACKAGE_JSON }}"
         ECR_REGION="${{ inputs.ECR_REGION }}"
         PLATFORM="${{ inputs.PLATFORM }}"
@@ -101,6 +103,9 @@ runs:
         cat "$PACKAGE_JSON"
         aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ inputs.ECR_USERNAME }}
         echo "Building and pushing Docker image with Buildx..."
+        echo "Using platform: $PLATFORM"
+        echo "ecr registry: $ECR_REGISTRY"
+        echo "repo name: $REPO_NAME"
         docker buildx build --platform "$PLATFORM" \
           --pull=false \
           --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache \
