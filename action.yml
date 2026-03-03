@@ -70,12 +70,12 @@ runs:
     #   id: login-ecr
     #   uses: aws-actions/amazon-ecr-login@v2
   
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2.0.1
-      env:
-        AWS_REGION: ${{ inputs.ECR_REGION }}
-        AWS_DEFAULT_REGION: ${{ inputs.ECR_REGION }}
+    # - name: Login to Amazon ECR
+    #   id: login-ecr
+    #   uses: aws-actions/amazon-ecr-login@v2.0.1
+    #   env:
+    #     AWS_REGION: ${{ inputs.ECR_REGION }}
+    #     AWS_DEFAULT_REGION: ${{ inputs.ECR_REGION }}
     - name: Build and push Docker image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -99,7 +99,7 @@ runs:
         mv "$PACKAGE_JSON.tmp" "$PACKAGE_JSON"
         echo "Modified package.json for caching:"
         cat "$PACKAGE_JSON"
-        #aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ inputs.ECR_USERNAME }}
+        aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ inputs.ECR_USERNAME }}
         echo "Building and pushing Docker image with Buildx..."
         docker buildx build --platform "$PLATFORM" \
           --pull=false \
