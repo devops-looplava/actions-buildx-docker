@@ -94,7 +94,7 @@ runs:
         IMAGE_TYPE="${{ inputs.IMAGE_TYPE }}"
         VERSION=$(jq -r .version "$PACKAGE_JSON")
         IMAGE_TAG="${{ inputs.IMAGE_TAG }}"
-        ECR_REGISTRY="${{ inputs.ECR_USERNAME }}
+        ECR_REGISTRY="${{ inputs.ECR_USERNAME }}"
         # Temporarily set version to 0.0.0 for caching
         echo "Temporarily setting version to 0.0.0 for caching purposes..."
         jq '.version = "0.0.0"' "$PACKAGE_JSON" > "$PACKAGE_JSON.tmp"
