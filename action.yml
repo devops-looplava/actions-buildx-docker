@@ -66,6 +66,7 @@ runs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
+
     - name: Build and push Docker image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -84,9 +85,12 @@ runs:
         IMAGE_TAG="${{ inputs.IMAGE_TAG }}"
 
         # Temporarily set version to 0.0.0 for caching
+        echo "Temporarily setting version to 0.0.0 for caching purposes..."
         jq '.version = "0.0.0"' "$PACKAGE_JSON" > "$PACKAGE_JSON.tmp"
         mv "$PACKAGE_JSON.tmp" "$PACKAGE_JSON"
-
+        echo "Modified package.json for caching:"
+        cat "$PACKAGE_JSON"
+        echo "Building and pushing Docker image with Buildx..."
         docker buildx build --platform "$PLATFORM" \
           --pull=false \
           --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache \
@@ -95,7 +99,7 @@ runs:
           -t "$ECR_REGISTRY/$REPO_NAME:$VERSION" \
           -f "$DOCKERFILE" \
           --push .
-
+        echo "Restoring original version in package.json..."
         git checkout "$PACKAGE_JSON"
 
     - name: list images
