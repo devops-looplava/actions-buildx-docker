@@ -109,7 +109,7 @@ runs:
       shell: bash
       run: docker image ls
 
-    # - name: Scan Docker image with Trivy
+    # - name: Scan Docker image with Trivy 
     #   shell: bash
     #   run: |
     #     ls -la
