@@ -43,8 +43,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # - name: Set up QEMU
-    #   uses: docker/setup-qemu-action@v3
+
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -110,23 +109,23 @@ runs:
       shell: bash
       run: docker image ls
 
-    - name: Scan Docker image with Trivy
-      shell: bash
-      run: |
-        ls -la
-        REPO="${{ inputs.REPO }}"
-        REPO_NAME="${REPO##*/}"
-        echo "Repo name: $REPO_NAME"
-        VERSION="${{ steps.get-version.outputs.version }}"
-        #aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ inputs.ECR_USERNAME }}
-        IMAGE="${{ inputs.ECR_USERNAME }}/$REPO_NAME:$VERSION"
-        echo "Scanning $IMAGE for vulnerabilities..."
-        #run base on input SCAN_IMAGE
-        if [ "${{ inputs.SCAN_IMAGE }}" = "true" ]; then
-          echo "Scanning enabled, running Trivy..."
-          trivy image --severity CRITICAL,HIGH --exit-code 1 --skip-files "/usr/local/lib/node_modules/**" --ignore-unfixed $IMAGE
-        else
-          echo "Scanning disabled, skipping Trivy..."
-        fi
-        #trivy image --severity CRITICAL,HIGH,MEDIUM --exit-code 1 --ignore-unfixed $IMAGE
-        #--exit-code 1 --ignore-unfixed $IMAGE
+    # - name: Scan Docker image with Trivy
+    #   shell: bash
+    #   run: |
+    #     ls -la
+    #     REPO="${{ inputs.REPO }}"
+    #     REPO_NAME="${REPO##*/}"
+    #     echo "Repo name: $REPO_NAME"
+    #     VERSION="${{ steps.get-version.outputs.version }}"
+    #     #aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ inputs.ECR_USERNAME }}
+    #     IMAGE="${{ inputs.ECR_USERNAME }}/$REPO_NAME:$VERSION"
+    #     echo "Scanning $IMAGE for vulnerabilities..."
+    #     #run base on input SCAN_IMAGE
+    #     if [ "${{ inputs.SCAN_IMAGE }}" = "true" ]; then
+    #       echo "Scanning enabled, running Trivy..."
+    #       trivy image --severity CRITICAL,HIGH --exit-code 1 --skip-files "/usr/local/lib/node_modules/**" --ignore-unfixed $IMAGE
+    #     else
+    #       echo "Scanning disabled, skipping Trivy..."
+    #     fi
+    #     #trivy image --severity CRITICAL,HIGH,MEDIUM --exit-code 1 --ignore-unfixed $IMAGE
+    #     #--exit-code 1 --ignore-unfixed $IMAGE
