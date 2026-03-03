@@ -69,10 +69,12 @@ runs:
     # - name: Login to Amazon ECR
     #   id: login-ecr
     #   uses: aws-actions/amazon-ecr-login@v2
+  
     - name: Login to Amazon ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      uses: aws-actions/amazon-ecr-login@v2.0.1
       env:
+        AWS_REGION: ${{ inputs.ECR_REGION }}
         AWS_DEFAULT_REGION: ${{ inputs.ECR_REGION }}
     - name: Build and push Docker image
       env:
