@@ -109,8 +109,8 @@ runs:
         PLATFORM_SAFE=$(echo "$PLATFORM" | tr '/' '-')
         docker buildx build --platform "$PLATFORM" \
           --pull=false \
-          --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache-${PLATFORM_SAFE} \
-          --cache-to type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache-${PLATFORM_SAFE},mode=max,ignore-error=true \
+          --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache-${PLATFORM_SAFE}-$REPO_NAME \
+          --cache-to type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache-${PLATFORM_SAFE}-$REPO_NAME,mode=max,ignore-error=true \
           -t "$ECR_REGISTRY/$REPO_NAME:$IMAGE_TYPE-${IMAGE_TAG}" \
           -t "$ECR_REGISTRY/$REPO_NAME:$VERSION" \
           -f "$DOCKERFILE" \
