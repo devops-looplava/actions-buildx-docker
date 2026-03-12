@@ -36,6 +36,9 @@ inputs:
     description: "Target platform for the image (e.g. 'linux/amd64,linux/arm64')"
     required: false
     default: "linux/amd64"
+  GITHUB_TOKEN:
+    description: "GitHub token for authenticating to GitHub Packages (npm)"
+    required: false
 
 runs:
   using: "composite"
@@ -109,6 +112,7 @@ runs:
         PLATFORM_SAFE=$(echo "$PLATFORM" | tr '/' '-')
         docker buildx build --platform "$PLATFORM" \
           --pull=false \
+          --build-arg GITHUB_TOKEN="${{ inputs.GITHUB_TOKEN }}" \
           --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache-${PLATFORM_SAFE}-$REPO_NAME \
           --cache-to type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache-${PLATFORM_SAFE}-$REPO_NAME,mode=max,ignore-error=true \
           -t "$ECR_REGISTRY/$REPO_NAME:$IMAGE_TYPE-${IMAGE_TAG}" \
