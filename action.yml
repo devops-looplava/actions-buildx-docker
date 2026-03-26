@@ -110,9 +110,11 @@ runs:
         echo "ecr registry: $ECR_REGISTRY"
         echo "repo name: $REPO_NAME"
         PLATFORM_SAFE=$(echo "$PLATFORM" | tr '/' '-')
+        export GITHUB_TOKEN="${{ inputs.GITHUB_TOKEN }}"
         docker buildx build --platform "$PLATFORM" \
           --pull=false \
           --build-arg GITHUB_TOKEN="${{ inputs.GITHUB_TOKEN }}" \
+          --secret id=github_token,env=GITHUB_TOKEN \
           --cache-from type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache-${PLATFORM_SAFE}-$REPO_NAME \
           --cache-to type=s3,region="$ECR_REGION",bucket="$CACHE_BUCKET",name=onoctave-cache-${PLATFORM_SAFE}-$REPO_NAME,mode=max,ignore-error=true \
           -t "$ECR_REGISTRY/$REPO_NAME:$IMAGE_TYPE-${IMAGE_TAG}" \
